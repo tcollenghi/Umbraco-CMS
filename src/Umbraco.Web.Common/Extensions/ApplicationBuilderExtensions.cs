@@ -67,6 +67,8 @@ namespace Umbraco.Extensions
             // Must be called after UseRouting and before UseEndpoints
             app.UseSession();
 
+            app.UseApplicationUrlMiddleware();
+
             // Must come after the above!
             app.UseUmbracoInstaller();
 
@@ -130,6 +132,17 @@ namespace Umbraco.Extensions
                 app.UseMiddleware<MiniProfilerMiddleware>();
             }
 
+            return app;
+        }
+
+        /// <summary>
+        /// Enables middleware that ensures that ApplicationUrl is set on first request.
+        /// </summary>
+        /// <param name="app">this</param>
+        /// <returns>ApplicationBuilder</returns>
+        public static IApplicationBuilder UseApplicationUrlMiddleware(this IApplicationBuilder app)
+        {
+            app.UseMiddleware<ApplicationUrlMiddleware>();
             return app;
         }
 

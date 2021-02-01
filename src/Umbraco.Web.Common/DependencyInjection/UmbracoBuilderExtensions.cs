@@ -266,6 +266,7 @@ namespace Umbraco.Web.Common.DependencyInjection
 
             builder.Services.AddUnique<UmbracoRequestLoggingMiddleware>();
             builder.Services.AddUnique<UmbracoRequestMiddleware>();
+            builder.Services.AddUnique<ApplicationUrlMiddleware>();
             builder.Services.AddUnique<BootFailedMiddleware>();
 
             builder.Services.AddUnique<UmbracoJsonModelBinder>();
