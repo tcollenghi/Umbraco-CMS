@@ -17,7 +17,6 @@
     <ItemGroup>
       <ProjectReference Include="..\Umbraco.Core\Umbraco.Core.csproj" />
       <ProjectReference Include="..\Umbraco.Infrastructure\Umbraco.Infrastructure.csproj" />
-      <ProjectReference Include="..\Umbraco.Web.BackOffice\Umbraco.Web.BackOffice.csproj" />
     </ItemGroup>
 
     <ItemGroup>

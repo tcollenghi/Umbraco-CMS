@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.Models;
 using Umbraco.Core.Hosting;
-using Umbraco.Core.IO;
 
 namespace Umbraco.ModelsBuilder.Embedded.Building
 {
@@ -22,8 +21,7 @@ namespace Umbraco.ModelsBuilder.Embedded.Building
             _outOfDateModels = outOfDateModels;
             _hostingEnvironment = hostingEnvironment;
         }
-
-        internal void GenerateModels()
+        public void GenerateModels()
         {
             var modelsDirectory = _config.ModelsDirectoryAbsolute(_hostingEnvironment);
             if (!Directory.Exists(modelsDirectory))

@@ -10,7 +10,7 @@ namespace Umbraco.ModelsBuilder.Embedded.Building
     /// <summary>
     /// Implements a builder that works by writing text.
     /// </summary>
-    internal class TextBuilder : Builder
+    public class TextBuilder : Builder
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TextBuilder"/> class with a list of models to generate

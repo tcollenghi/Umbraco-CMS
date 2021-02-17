@@ -129,15 +129,6 @@ namespace Umbraco.ModelsBuilder.Embedded.DependencyInjection
             return builder;
         }
 
-        /// <summary>
-        /// Can be called if using an external models builder to remove the embedded models builder controller features
-        /// </summary>
-        public static IUmbracoBuilder DisableModelsBuilderControllers(this IUmbracoBuilder builder)
-        {
-            builder.Services.AddSingleton<DisableModelsBuilderNotificationHandler>();
-            return builder;
-        }
-
         private static IUmbracoBuilder AddPureLiveRazorEngine(this IUmbracoBuilder builder)
         {
             // See notes in RefreshingRazorViewEngine for information on what this is doing.

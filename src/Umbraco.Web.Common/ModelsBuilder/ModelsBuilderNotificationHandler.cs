@@ -11,8 +11,6 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 using Umbraco.Core.Services.Implement;
 using Umbraco.Core.Strings;
-using Umbraco.Extensions;
-using Umbraco.ModelsBuilder.Embedded.BackOffice;
 using Umbraco.Web.Common.ModelBinders;
 using Umbraco.Web.WebAssets;
 
@@ -84,8 +82,8 @@ namespace Umbraco.ModelsBuilder.Embedded
             {
                 throw new ArgumentException("Invalid umbracoPlugins");
             }
-
-            umbracoUrls["modelsBuilderBaseUrl"] = _linkGenerator.GetUmbracoApiServiceBaseUrl<ModelsBuilderDashboardController>(controller => controller.BuildModels());
+            //TODO inject
+            //umbracoUrls["modelsBuilderBaseUrl"] = _linkGenerator.GetUmbracoApiServiceBaseUrl<ModelsBuilderDashboardController>(controller => controller.BuildModels());
             umbracoPlugins["modelsBuilder"] = GetModelsBuilderSettings();
         }
 

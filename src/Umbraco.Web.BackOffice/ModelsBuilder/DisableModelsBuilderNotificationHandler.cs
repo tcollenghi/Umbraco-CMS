@@ -1,6 +1,5 @@
 using Umbraco.Core.Events;
 using Umbraco.ModelsBuilder.Embedded.BackOffice;
-using Umbraco.ModelsBuilder.Embedded.DependencyInjection;
 using Umbraco.Web.Features;
 
 namespace Umbraco.ModelsBuilder.Embedded
