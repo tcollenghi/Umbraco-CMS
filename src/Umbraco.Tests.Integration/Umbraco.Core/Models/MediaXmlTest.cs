@@ -1,46 +1,36 @@
 ﻿using System.Linq;
 using System.Xml.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using NUnit.Framework;
-using Umbraco.Cms.Core.Configuration.Models;
-using Umbraco.Cms.Core.IO;
-using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Cms.Tests.Common.Builders;
 using Umbraco.Cms.Tests.Common.Testing;
+using Umbraco.Cms.Tests.Integration.Testing;
 using Umbraco.Extensions;
-using Umbraco.Tests.TestHelpers;
-using Umbraco.Tests.TestHelpers.Entities;
 using Constants = Umbraco.Cms.Core.Constants;
 
-namespace Umbraco.Tests.Models
+namespace Umbraco.Cms.Tests.Integration.Umbraco.Core.Models
 {
     [TestFixture]
     [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerFixture)]
-    public class MediaXmlTest : TestWithDatabaseBase
+    public class MediaXmlTest : UmbracoIntegrationTest
     {
+        private IMediaTypeService MediaTypeService => GetRequiredService<IMediaTypeService>();
+        private IMediaService MediaService => GetRequiredService<IMediaService>();
+        private IUserService UserService => GetRequiredService<IUserService>();
+        private IShortStringHelper ShortStringHelper => GetRequiredService<IShortStringHelper>();
+        private IEntityXmlSerializer EntityXmlSerializer => GetRequiredService<IEntityXmlSerializer>();
+
         [Test]
         public void Can_Generate_Xml_Representation_Of_Media()
         {
             // Arrange
-            var mediaType = MockedContentTypes.CreateImageMediaType("image2");
-            ServiceContext.MediaTypeService.Save(mediaType);
+            var mediaType = MediaTypeBuilder.CreateImageMediaType("image2");
+            MediaTypeService.Save(mediaType);
 
-            // reference, so static ctor runs, so event handlers register
-            // and then, this will reset the width, height... because the file does not exist, of course ;-(
-            var loggerFactory = NullLoggerFactory.Instance;
-            var scheme = Mock.Of<IMediaPathScheme>();
-            var contentSettings = new ContentSettings();
-
-            var mediaFileSystem = new MediaFileSystem(Mock.Of<IFileSystem>(), scheme, loggerFactory.CreateLogger<MediaFileSystem>(), ShortStringHelper);
-            var ignored = new FileUploadPropertyEditor(loggerFactory, mediaFileSystem, Microsoft.Extensions.Options.Options.Create(contentSettings), DataTypeService, LocalizationService, LocalizedTextService, ShortStringHelper, UploadAutoFillProperties, JsonNetSerializer);
-
-            var media = MockedMedia.CreateMediaImage(mediaType, -1);
+            var media = MediaBuilder.CreateMediaImage(mediaType, -1);
             media.WriterId = -1; // else it's zero and that's not a user and it breaks the tests
-            ServiceContext.MediaService.Save(media, Constants.Security.SuperUserId);
+            MediaService.Save(media, Constants.Security.SuperUserId);
 
             // so we have to force-reset these values because the property editor has cleared them
             media.SetValue(Constants.Conventions.Media.Width, "200");
@@ -52,7 +42,7 @@ namespace Umbraco.Tests.Models
             var urlName = media.GetUrlSegment(ShortStringHelper, new[] { new DefaultUrlSegmentProvider(ShortStringHelper) });
 
             // Act
-            XElement element = media.ToXml(Factory.GetRequiredService<IEntityXmlSerializer>());
+            XElement element = media.ToXml(EntityXmlSerializer);
 
             // Assert
             Assert.That(element, Is.Not.Null);
@@ -68,7 +58,7 @@ namespace Umbraco.Tests.Models
             Assert.AreEqual(media.Path, (string)element.Attribute("path"));
             Assert.AreEqual("", (string)element.Attribute("isDoc"));
             Assert.AreEqual(media.ContentType.Id.ToString(), (string)element.Attribute("nodeType"));
-            Assert.AreEqual(media.GetCreatorProfile(ServiceContext.UserService).Name, (string)element.Attribute("writerName"));
+            Assert.AreEqual(media.GetCreatorProfile(UserService).Name, (string)element.Attribute("writerName"));
             Assert.AreEqual(media.CreatorId.ToString(), (string)element.Attribute("writerID"));
             Assert.IsNull(element.Attribute("template"));
 

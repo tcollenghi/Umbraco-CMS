@@ -1,40 +1,46 @@
 ﻿using System.Linq;
 using System.Xml.Linq;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Cms.Tests.Common.Builders;
 using Umbraco.Cms.Tests.Common.Testing;
+using Umbraco.Cms.Tests.Integration.Testing;
 using Umbraco.Extensions;
-using Umbraco.Tests.TestHelpers;
-using Umbraco.Tests.TestHelpers.Entities;
-using Umbraco.Tests.Testing;
 using Constants = Umbraco.Cms.Core.Constants;
 
-namespace Umbraco.Tests.Models
+namespace Umbraco.Cms.Tests.Integration.Umbraco.Core.Models
 {
     [TestFixture]
     [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerFixture)]
-    public class ContentXmlTest : TestWithDatabaseBase
+    public class ContentXmlTest : UmbracoIntegrationTest
     {
+        private IFileService FileService => GetRequiredService<IFileService>();
+        private IContentTypeService ContentTypeService => GetRequiredService<IContentTypeService>();
+        private IContentService ContentService => GetRequiredService<IContentService>();
+        private IEntityXmlSerializer EntityXmlSerializer => GetRequiredService<IEntityXmlSerializer>();
+        private IUserService UserService => GetRequiredService<IUserService>();
+
         [Test]
         public void Can_Generate_Xml_Representation_Of_Content()
         {
             // Arrange
-            var contentType = MockedContentTypes.CreateTextPageContentType();
-            ServiceContext.FileService.SaveTemplate(contentType.DefaultTemplate); // else, FK violation on contentType!
-            ServiceContext.ContentTypeService.Save(contentType);
+            Template template = TemplateBuilder.CreateTextPageTemplate();
+            FileService.SaveTemplate(template); // Else nullreference exception.
 
-            var content = MockedContent.CreateTextpageContent(contentType, "Root Home", -1);
-            ServiceContext.ContentService.Save(content, Constants.Security.SuperUserId);
+            var contentType = ContentTypeBuilder.CreateTextPageContentType("test1", "Test1", template.Id);
+            FileService.SaveTemplate(contentType.DefaultTemplate); // else, FK violation on contentType!
+            ContentTypeService.Save(contentType);
+
+            var content = ContentBuilder.CreateTextpageContent(contentType, "Root Home", -1);
+            ContentService.Save(content, Constants.Security.SuperUserId);
 
             var nodeName = content.ContentType.Alias.ToSafeAlias(ShortStringHelper);
             var urlName = content.GetUrlSegment(ShortStringHelper, new[]{new DefaultUrlSegmentProvider(ShortStringHelper) });
 
             // Act
-            XElement element = content.ToXml(Factory.GetRequiredService<IEntityXmlSerializer>());
+            XElement element = content.ToXml(EntityXmlSerializer);
 
             // Assert
             Assert.That(element, Is.Not.Null);
@@ -51,8 +57,8 @@ namespace Umbraco.Tests.Models
             Assert.AreEqual(content.Path, (string)element.Attribute("path"));
             Assert.AreEqual("", (string)element.Attribute("isDoc"));
             Assert.AreEqual(content.ContentType.Id.ToString(), (string)element.Attribute("nodeType"));
-            Assert.AreEqual(content.GetCreatorProfile(ServiceContext.UserService).Name, (string)element.Attribute("creatorName"));
-            Assert.AreEqual(content.GetWriterProfile(ServiceContext.UserService).Name, (string)element.Attribute("writerName"));
+            Assert.AreEqual(content.GetCreatorProfile(UserService).Name, (string)element.Attribute("creatorName"));
+            Assert.AreEqual(content.GetWriterProfile(UserService).Name, (string)element.Attribute("writerName"));
             Assert.AreEqual(content.WriterId.ToString(), (string)element.Attribute("writerID"));
             Assert.AreEqual(content.TemplateId.ToString(), (string)element.Attribute("template"));
 
