@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using AutoFixture.NUnit3;
 using Moq;
 using NUnit.Framework;
@@ -122,6 +124,79 @@ namespace Umbraco.Cms.Tests.UnitTests.Umbraco.Core.Routing
             // Assert
             Assert.IsTrue(result);
             Assert.AreEqual(publishedRequestBuilder.PublishedContent.Id, nodeMatch);
+        }
+
+        [InlineAutoMoqData("http://domain1.com/this/is/my/alias", "de-DE", -1001)] // alias to domain's page fails - no alias on domain's home
+        [InlineAutoMoqData("http://domain1.com/page2/alias", "de-DE", 10011)] // alias to sub-page works
+        [InlineAutoMoqData("http://domain1.com/en/flux", "en-US", -10011)] // alias to domain's page fails - no alias on domain's home
+        [InlineAutoMoqData("http://domain1.com/endanger", "de-DE", 10011)] // alias to sub-page works, even with "en..."
+        [InlineAutoMoqData("http://domain1.com/en/endanger", "en-US", -10011)] // no
+        [InlineAutoMoqData("http://domain1.com/only/one/alias", "de-DE", 100111)] // ok
+        [InlineAutoMoqData("http://domain1.com/entropy", "de-DE", 100111)] // ok
+        [InlineAutoMoqData("http://domain1.com/bar/foo", "de-DE", 100111)] // ok
+        [InlineAutoMoqData("http://domain1.com/en/bar/foo", "en-US", -100111)] // no, alias must include "en/"
+        [InlineAutoMoqData("http://domain1.com/en/bar/nil", "en-US", 100111)] // ok, alias includes "en/"
+        public void Lookup_By_Url_Alias_And_Domain(
+            string absoluteUrl,
+            string expectedCulture,
+            int nodeMatch,
+            [Frozen] IPublishedContentCache publishedContentCache,
+            [Frozen] IUmbracoContextAccessor umbracoContextAccessor,
+            [Frozen] IUmbracoContext umbracoContext,
+            [Frozen] IVariationContextAccessor variationContextAccessor,
+            IFileService fileService,
+            ContentFinderByUrlAlias sut,
+            IPublishedContent parentContent,
+            IPublishedContent[] children,
+            IPublishedProperty childUrlProperty)
+        {
+            //Arrange
+            var parentUrl = "/parent";
+            var parentID = 2140;
+
+            // Setup IUmbracoContext to return an IPublishedContentCache
+            Mock.Get(umbracoContextAccessor).Setup(x => x.UmbracoContext).Returns(umbracoContext);
+            Mock.Get(umbracoContext).Setup(x => x.Content).Returns(publishedContentCache);
+            // Setup IPublishedContentCache to return the parent contentItem when requested with the ID
+            Mock.Get(publishedContentCache).Setup(x => x.GetById(parentID)).Returns(parentContent);
+
+            // Setup the root contentItem to contain the parentID and return the children for ChildrenForAllCultures
+            Mock.Get(parentContent).Setup(x => x.Id).Returns(parentID);
+            Mock.Get(parentContent).Setup(x => x.ChildrenForAllCultures).Returns(children);
+
+            // Setup children with ID and relativeUrl
+            IPublishedContent child = children[0];
+            var culturesDict = new Dictionary<string, PublishedCultureInfo>();
+            culturesDict[expectedCulture] = new PublishedCultureInfo(expectedCulture, "German", "", DateTime.MinValue);
+            var cultures = new ReadOnlyDictionary<string, PublishedCultureInfo>(culturesDict);
+            Mock.Get(child).Setup(x => x.Id).Returns(nodeMatch);
+            Mock.Get(child).Setup(x => x.GetProperty(Constants.Conventions.Content.UrlAlias)).Returns(childUrlProperty);
+            Mock.Get(child).Setup(x => x.Cultures).Returns(cultures);
+            Mock.Get(childUrlProperty).Setup(x => x.GetValue(null, null)).Returns(absoluteUrl);
+
+            // Setup IVariationContextAccessor so our empty VariationContext gets returned.
+            // No variations, so we ant an empty variation context
+            var variationContext = new VariationContext(expectedCulture);
+            Mock.Get(variationContextAccessor).Setup(x => x.VariationContext).Returns(variationContext);
+            var publishedRequestBuilder = new PublishedRequestBuilder(new Uri(absoluteUrl, UriKind.Absolute), fileService);
+            // Setup domain to contain our parentID as root node.
+            var domain = new DomainAndUri(new Domain(1, "test", parentID, expectedCulture, false), new Uri(absoluteUrl));
+            publishedRequestBuilder.SetDomain(domain);
+
+
+            //Act
+            var result = sut.TryFindContent(publishedRequestBuilder);
+
+            // Assert
+            if (nodeMatch > 0)
+            {
+                Assert.IsTrue(result);
+                Assert.AreEqual(nodeMatch, publishedRequestBuilder.PublishedContent.Id);
+            }
+            else
+            {
+                Assert.IsFalse(result);
+            }
         }
     }
 }

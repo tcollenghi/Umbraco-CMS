@@ -29,11 +29,11 @@ namespace Umbraco.Cms.Tests.Integration.Umbraco.Core.Models
             Template template = TemplateBuilder.CreateTextPageTemplate();
             FileService.SaveTemplate(template); // Else nullreference exception.
 
-            var contentType = ContentTypeBuilder.CreateTextPageContentType("test1", "Test1", template.Id);
+            ContentType contentType = ContentTypeBuilder.CreateTextPageContentType("test1", "Test1", template.Id);
             FileService.SaveTemplate(contentType.DefaultTemplate); // else, FK violation on contentType!
             ContentTypeService.Save(contentType);
 
-            var content = ContentBuilder.CreateTextpageContent(contentType, "Root Home", -1);
+            Content content = ContentBuilder.CreateTextpageContent(contentType, "Root Home", -1);
             ContentService.Save(content, Constants.Security.SuperUserId);
 
             var nodeName = content.ContentType.Alias.ToSafeAlias(ShortStringHelper);
