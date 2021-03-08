@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using AutoFixture.NUnit3;
 using Moq;
 using NUnit.Framework;
@@ -126,19 +125,19 @@ namespace Umbraco.Cms.Tests.UnitTests.Umbraco.Core.Routing
             Assert.AreEqual(publishedRequestBuilder.PublishedContent.Id, nodeMatch);
         }
 
-        [InlineAutoMoqData("http://domain1.com/this/is/my/alias", "de-DE", -1001)] // alias to domain's page fails - no alias on domain's home
-        [InlineAutoMoqData("http://domain1.com/page2/alias", "de-DE", 10011)] // alias to sub-page works
-        [InlineAutoMoqData("http://domain1.com/en/flux", "en-US", -10011)] // alias to domain's page fails - no alias on domain's home
-        [InlineAutoMoqData("http://domain1.com/endanger", "de-DE", 10011)] // alias to sub-page works, even with "en..."
-        [InlineAutoMoqData("http://domain1.com/en/endanger", "en-US", -10011)] // no
-        [InlineAutoMoqData("http://domain1.com/only/one/alias", "de-DE", 100111)] // ok
-        [InlineAutoMoqData("http://domain1.com/entropy", "de-DE", 100111)] // ok
-        [InlineAutoMoqData("http://domain1.com/bar/foo", "de-DE", 100111)] // ok
-        [InlineAutoMoqData("http://domain1.com/en/bar/foo", "en-US", -100111)] // no, alias must include "en/"
-        [InlineAutoMoqData("http://domain1.com/en/bar/nil", "en-US", 100111)] // ok, alias includes "en/"
-        public void Lookup_By_Url_Alias_And_Domain(
+        [InlineAutoMoqData("http://domain1.com/this/is/my/alias", "", -1001)] // alias to domain's page fails - no alias on domain's home
+        [InlineAutoMoqData("http://domain1.com/page2/alias", "/page2/alias", 10011)] // alias to sub-page works
+        [InlineAutoMoqData("http://domain1.com/en/flux", "", -10011)] // alias to domain's page fails - no alias on domain's home
+        [InlineAutoMoqData("http://domain1.com/endanger", "/endanger", 10011)] // alias to sub-page works, even with "en..."
+        [InlineAutoMoqData("http://domain1.com/en/endanger", "endanger", -10011)] // no
+        [InlineAutoMoqData("http://domain1.com/only/one/alias", "/only/one/alias", 100111)] // ok
+        [InlineAutoMoqData("http://domain1.com/entropy", "/entropy", 100111)] // ok
+        [InlineAutoMoqData("http://domain1.com/bar/foo", "/bar/foo", 100111)] // ok
+        [InlineAutoMoqData("http://domain1.com/en/bar/foo", "bar/foo", -100111)] // no, alias must include "en/"
+        [InlineAutoMoqData("http://domain1.com/en/bar/nil", "en/bar/nil",  100111)] // ok, alias includes "en/"
+        public async Task Lookup_By_Url_Alias_And_Domain(
             string absoluteUrl,
-            string expectedCulture,
+            string alias,
             int nodeMatch,
             [Frozen] IPublishedContentCache publishedContentCache,
             [Frozen] IUmbracoContextAccessor umbracoContextAccessor,
@@ -166,21 +165,16 @@ namespace Umbraco.Cms.Tests.UnitTests.Umbraco.Core.Routing
 
             // Setup children with ID and relativeUrl
             IPublishedContent child = children[0];
-            var culturesDict = new Dictionary<string, PublishedCultureInfo>();
-            culturesDict[expectedCulture] = new PublishedCultureInfo(expectedCulture, "German", "", DateTime.MinValue);
-            var cultures = new ReadOnlyDictionary<string, PublishedCultureInfo>(culturesDict);
             Mock.Get(child).Setup(x => x.Id).Returns(nodeMatch);
             Mock.Get(child).Setup(x => x.GetProperty(Constants.Conventions.Content.UrlAlias)).Returns(childUrlProperty);
-            Mock.Get(child).Setup(x => x.Cultures).Returns(cultures);
-            Mock.Get(childUrlProperty).Setup(x => x.GetValue(null, null)).Returns(absoluteUrl);
+            Mock.Get(childUrlProperty).Setup(x => x.GetValue(null, null)).Returns(alias);
 
             // Setup IVariationContextAccessor so our empty VariationContext gets returned.
-            // No variations, so we ant an empty variation context
-            var variationContext = new VariationContext(expectedCulture);
+            var variationContext = new VariationContext();
             Mock.Get(variationContextAccessor).Setup(x => x.VariationContext).Returns(variationContext);
             var publishedRequestBuilder = new PublishedRequestBuilder(new Uri(absoluteUrl, UriKind.Absolute), fileService);
             // Setup domain to contain our parentID as root node.
-            var domain = new DomainAndUri(new Domain(1, "test", parentID, expectedCulture, false), new Uri(absoluteUrl));
+            var domain = new DomainAndUri(new Domain(1, "test", parentID, null, false), new Uri(absoluteUrl));
             publishedRequestBuilder.SetDomain(domain);
 
 

@@ -90,7 +90,7 @@ namespace Umbraco.Cms.Core.Routing
             var test2 = ",/" + test1; // test2 is ",/alias,"
             test1 = "," + test1; // test1 is ",alias,"
 
-            bool IsMatch(IPublishedContent c, string a1, string a2)
+            bool IsMatch(IPublishedContent content, string alias1, string alias2)
             {
                 // this basically implements the original XPath query ;-(
                 //
@@ -98,35 +98,35 @@ namespace Umbraco.Cms.Core.Routing
                 // "contains(concat(',',translate(umbracoUrlAlias, ' ', ''),','),',{0},')" +
                 // " or contains(concat(',',translate(umbracoUrlAlias, ' ', ''),','),',/{0},')" +
                 // ")]"
-                if (!c.HasProperty(propertyAlias))
+                if (!content.HasProperty(propertyAlias))
                 {
                     return false;
                 }
 
-                IPublishedProperty p = c.GetProperty(propertyAlias);
-                var varies = p.PropertyType.VariesByCulture();
-                string v;
+                IPublishedProperty property = content.GetProperty(propertyAlias);
+                var varies = property.PropertyType.VariesByCulture();
+                string urlAlias;
                 if (varies)
                 {
-                    if (!c.HasCulture(culture))
+                    if (!content.HasCulture(culture))
                     {
                         return false;
                     }
 
-                    v = c.Value<string>(_publishedValueFallback, propertyAlias, culture);
+                    urlAlias = content.Value<string>(_publishedValueFallback, propertyAlias, culture);
                 }
                 else
                 {
-                    v = c.Value<string>(_publishedValueFallback, propertyAlias);
+                    urlAlias = content.Value<string>(_publishedValueFallback, propertyAlias);
                 }
 
-                if (string.IsNullOrWhiteSpace(v))
+                if (string.IsNullOrWhiteSpace(urlAlias))
                 {
                     return false;
                 }
 
-                v = "," + v.Replace(" ", string.Empty) + ",";
-                return v.InvariantContains(a1) || v.InvariantContains(a2);
+                urlAlias = "," + urlAlias.Replace(" ", string.Empty) + ",";
+                return urlAlias.InvariantContains(alias1) || urlAlias.InvariantContains(alias2);
             }
 
             // TODO: even with Linq, what happens below has to be horribly slow

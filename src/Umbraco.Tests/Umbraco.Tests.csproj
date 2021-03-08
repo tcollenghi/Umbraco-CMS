@@ -210,11 +210,9 @@
     <Compile Include="PublishedContent\PublishedMediaTests.cs" />
     <Compile Include="PublishedContent\PublishedContentMoreTests.cs" />
     <Compile Include="Cache\PublishedCache\PublishedContentCacheTests.cs" />
-    <Compile Include="Routing\ContentFinderByAliasWithDomainsTests.cs" />
     <Compile Include="Routing\DomainsAndCulturesTests.cs" />
     <Compile Include="Routing\UrlsWithNestedDomains.cs" />
     <Compile Include="TestHelpers\TestWithDatabaseBase.cs" />
-    <Compile Include="Routing\ContentFinderByAliasTests.cs" />
     <Compile Include="Routing\ContentFinderByIdTests.cs" />
     <Compile Include="Routing\ContentFinderByPageIdQueryTests.cs" />
     <Compile Include="Routing\RouteTestExtensions.cs" />
